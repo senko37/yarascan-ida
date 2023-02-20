@@ -78,7 +78,7 @@ class YaraIDA(ida_idaapi.plugin_t):
                 if file[-4:] == ".yar":
                     matches_l = YaraScan(res[1] + "\\" + file)
                     matches += matches_l
-            c = YaraChoose("Yara Detections", matches).Show()
+            c = YaraChoose(f"Yara Detections (" + res[1][res[1].rfind("\\") + 1:] + ")", matches).Show()
 
 def PLUGIN_ENTRY():
     return YaraIDA()
