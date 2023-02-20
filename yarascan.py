@@ -12,11 +12,13 @@ class YaraSettings(ida_kernwin.Form):
 BUTTON CANCEL Cancel
 YaraScan
 
-<##Yara Rules directory:{lPath}>""", { "lPath":  ida_kernwin.Form.DirInput() })
+<##Yara Rules directory:{lPath}>
+<Create comments:{lComments}>{lChkGroup}>""", { "lPath":  ida_kernwin.Form.DirInput(), "lChkGroup":  ida_kernwin.Form.ChkGroupControl(("lComments", )) })
         self.Compile()
 
     def Show(self):
-        return [ self.Execute(), self.lPath.value ]
+        self.lComments.checked = True
+        return self.Execute()
 
 class YaraChoose(ida_kernwin.Choose):
     def __init__(self, title, vals):
@@ -47,14 +49,15 @@ def GetSections():
         sec = ida_segment.get_next_seg(sec.start_ea)
     return sec_m
 
-def YaraScan(rule_file):
+def YaraScan(rule_file, comments):
     rule, matches = yara.compile(file = open(rule_file)), []
     for sec in GetSections():
         bytes = ida_bytes.get_bytes(sec.start_ea, sec.end_ea - sec.start_ea)
         for r in rule.match(data = bytes):
             for d in r.strings:
                 matches.append([ sec.start_ea + d[0], r.rule, r.meta["description"] if "description" in r.meta else "", rule_file[rule_file.rfind("\\") + 1:], str(d[2])])
-                ida_bytes.set_cmt(sec.start_ea + d[0], r.rule + " / " + (r.meta["description"] if "description" in r.meta else ""), True)
+                if comments:
+                    ida_bytes.set_cmt(sec.start_ea + d[0], r.rule + " / " + (r.meta["description"] if "description" in r.meta else ""), True)
     return matches
 
 class YaraIDA(ida_idaapi.plugin_t):
@@ -71,14 +74,15 @@ class YaraIDA(ida_idaapi.plugin_t):
         pass
 
     def run(self, arg):
-        res = YaraSettings().Show()
-        if res[0] == 1:
+        settings = YaraSettings()
+        res = settings.Show()
+        if res == 1:
             matches = []
-            for file in os.listdir(res[1]):
+            for file in os.listdir(settings.lPath.value):
                 if file[-4:] == ".yar":
-                    matches_l = YaraScan(res[1] + "\\" + file)
+                    matches_l = YaraScan(settings.lPath.value + "\\" + file, settings.lComments.checked)
                     matches += matches_l
-            c = YaraChoose(f"Yara Detections (" + res[1][res[1].rfind("\\") + 1:] + ")", matches).Show()
+            c = YaraChoose(f"Yara Detections (" + settings.lPath.value[settings.lPath.value.rfind("\\") + 1:] + ")", matches).Show()
 
 def PLUGIN_ENTRY():
     return YaraIDA()
