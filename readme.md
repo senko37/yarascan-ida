@@ -1,4 +1,5 @@
 # YaraScan
+![](preview.png)
 
 ## Installation
 Before using, you must install Yara python plugin with ``pip install yara-python``
