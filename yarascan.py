@@ -16,15 +16,7 @@ YaraScan
         self.Compile()
 
     def Show(self):
-        settings_path = f"{idc.idadir()}\\yara.settings"
-        if os.path.isfile(settings_path):
-            with open(settings_path, "r") as settings:
-                self.lPath.value = settings.read()
-        out = self.Execute()
-        if out == 1:
-            with open(settings_path, "w") as settings:
-                settings.write(self.lPath.value)
-        return [ out, self.lPath.value ]
+        return [ self.Execute(), self.lPath.value ]
 
 class YaraChoose(ida_kernwin.Choose):
     def __init__(self, title, vals):
